@@ -1,0 +1,148 @@
+# app.py
+import os
+import json
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+from flask import Flask, redirect, request, session, jsonify
+from flask_cors import CORS
+from dotenv import load_dotenv
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import Flow
+from googleapiclient.discovery import build
+from google.auth.transport.requests import Request
+
+
+# Load .env variables
+load_dotenv()
+
+# Flask setup
+app = Flask(__name__)
+app.secret_key = 'your_very_secret_key_here'  # Change this in production
+CORS(app, supports_credentials=True)
+
+# Load config
+CLIENT_SECRET_FILE = os.getenv("CLIENT_SECRET_FILE", "client_secret.json")
+SCOPES = [os.getenv("SCOPES", "https://www.googleapis.com/auth/drive.metadata.readonly")]
+REDIRECT_URI = os.getenv("REDIRECT_URI", "http://localhost:5000/oauth2callback")
+
+@app.route("/")
+def home():
+    return "✅ Drive Analyzer Flask Backend Running!"
+
+@app.route("/login")
+def login():
+    flow = Flow.from_client_secrets_file(
+        CLIENT_SECRET_FILE,
+        scopes=SCOPES,
+        redirect_uri=REDIRECT_URI
+    )
+    auth_url, _ = flow.authorization_url(prompt='consent', access_type='offline', include_granted_scopes='true')
+    return redirect(auth_url)
+
+@app.route("/oauth2callback")
+def oauth2callback():
+    flow = Flow.from_client_secrets_file(
+        CLIENT_SECRET_FILE,
+        scopes=SCOPES,
+        redirect_uri=REDIRECT_URI
+    )
+    flow.fetch_token(authorization_response=request.url)
+
+    creds = flow.credentials
+    session['credentials'] = {
+        'token': creds.token,
+        'refresh_token': creds.refresh_token,
+        'token_uri': creds.token_uri,
+        'client_id': creds.client_id,
+        'client_secret': creds.client_secret,
+        'scopes': creds.scopes
+    }
+    return redirect("http://localhost:3000")  # ✅ CHANGED: now goes to root
+
+@app.route("/files")
+def list_files():
+    if 'credentials' not in session:
+        return redirect("/login")
+
+    creds = Credentials(**session['credentials'])
+    drive_service = build('drive', 'v3', credentials=creds)
+
+    results = drive_service.files().list(
+        pageSize=10,
+        fields="files(id, name, mimeType, modifiedTime, size)"
+    ).execute()
+
+    return jsonify(results.get('files', []))
+
+@app.route("/storage")
+def storage_info():
+    if 'credentials' not in session:
+        return redirect("/login")
+
+    creds = Credentials(**session['credentials'])
+    drive_service = build('drive', 'v3', credentials=creds)
+
+    about = drive_service.about().get(fields="storageQuota").execute()
+    return jsonify(about['storageQuota'])
+
+@app.route("/user")
+def get_user():
+    from google.auth.transport.requests import Request, AuthorizedSession
+
+    print("🧠 Accessing /user route")
+
+    if 'credentials' not in session:
+        print("⚠️ No credentials in session")
+        return 'Unauthorized', 401
+
+    creds_data = session['credentials']
+    print("📦 Session credentials loaded:", creds_data)
+
+    creds = Credentials(
+        token=creds_data['token'],
+        refresh_token=creds_data.get('refresh_token'),
+        token_uri=creds_data['token_uri'],
+        client_id=creds_data['client_id'],
+        client_secret=creds_data['client_secret'],
+        scopes=creds_data['scopes']
+    )
+
+    # 🔄 Refresh the token if needed
+    if creds.expired and creds.refresh_token:
+        print("🔄 Token expired — refreshing...")
+        creds.refresh(Request())
+        session['credentials'] = {
+            'token': creds.token,
+            'refresh_token': creds.refresh_token,
+            'token_uri': creds.token_uri,
+            'client_id': creds.client_id,
+            'client_secret': creds.client_secret,
+            'scopes': creds.scopes
+        }
+        print("✅ Token refreshed and session updated.")
+
+    try:
+        # ✅ Use AuthorizedSession to send authenticated request
+        authed_session = AuthorizedSession(creds)
+        response = authed_session.get('https://www.googleapis.com/oauth2/v2/userinfo')
+        user_info = response.json()
+        print("🙋 User info fetched:", user_info)
+
+        return jsonify({
+            'email': user_info.get('email'),
+            'name': user_info.get('name'),
+            'picture': user_info.get('picture')
+        })
+
+    except Exception as e:
+        print("❌ Error accessing Google API:", e)
+        return 'Unauthorized', 401
+
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect("http://localhost:3000/login")
+
+if __name__ == "__main__":
+    app.run(debug=True)
