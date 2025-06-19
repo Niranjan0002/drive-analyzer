@@ -1,8 +1,22 @@
 // components/Header/Header.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-const Header = ({ styles, searchQuery, setSearchQuery, toggleSidebar, user }) => {
+const Header = ({ styles, searchQuery, setSearchQuery, toggleSidebar }) => {
+  const [userInfo, setUserInfo] = useState({ email: '', name: '', picture: '' });
   const [showConfirm, setShowConfirm] = useState(false);
+
+  useEffect(() => {
+    fetch('http://localhost:5000/user', { credentials: 'include' })
+      .then((res) => res.json())
+      .then((data) => {
+        setUserInfo({
+          email: data.email || '',
+          name: data.name || '',
+          picture: data.picture || ''
+        });
+      })
+      .catch(() => setUserInfo({ email: '', name: '', picture: '' }));
+  }, []);
 
   const handleLogout = () => {
     setShowConfirm(true);
@@ -28,16 +42,24 @@ const Header = ({ styles, searchQuery, setSearchQuery, toggleSidebar, user }) =>
         onChange={(e) => setSearchQuery(e.target.value)}
         style={styles.searchInput}
       />
+
       <div style={styles.headerIcons}>
-        {user?.picture && (
+        {userInfo.name && (
+          <span style={{ color: 'white', fontWeight: 500 }}>{userInfo.name}</span>
+        )}
+        {userInfo.picture && (
           <img
-            src={user.picture}
+            src={userInfo.picture}
             alt="Profile"
-            style={{ width: '32px', height: '32px', borderRadius: '50%', marginRight: '8px' }}
-            title={user.email}
+            title={userInfo.email}
+            style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '50%',
+              objectFit: 'cover'
+            }}
           />
         )}
-        <span style={{ color: 'white', marginRight: '12px' }}>{user?.name}</span>
         <button onClick={handleLogout} style={styles.logoutButton}>🚪 Logout</button>
       </div>
 
