@@ -1,7 +1,7 @@
 // components/Header/Header.jsx
 import React, { useState, useEffect } from 'react';
 
-const Header = ({ styles, searchQuery, setSearchQuery, toggleSidebar }) => {
+const Header = ({ styles, searchQuery, setSearchQuery, toggleSidebar, activeNavItem }) => {
   const [userInfo, setUserInfo] = useState({ email: '', name: '', picture: '' });
   const [showConfirm, setShowConfirm] = useState(false);
 
@@ -18,26 +18,37 @@ const Header = ({ styles, searchQuery, setSearchQuery, toggleSidebar }) => {
       .catch(() => setUserInfo({ email: '', name: '', picture: '' }));
   }, []);
 
-  const handleLogout = () => {
-    setShowConfirm(true);
-  };
+  const handleLogout = () => setShowConfirm(true);
 
   const confirmLogout = () => {
     setShowConfirm(false);
     window.location.href = 'http://localhost:5000/logout';
   };
 
-  const cancelLogout = () => {
-    setShowConfirm(false);
+  const cancelLogout = () => setShowConfirm(false);
+
+  // 🎯 Dynamic placeholder text
+  const getPlaceholder = () => {
+    switch (activeNavItem) {
+      case 'Dashboard':
+        return 'Search your recent files...';
+      case 'My Files':
+        return 'Search all files...';
+      case 'Favorites':
+        return 'Search your favorites...';
+      default:
+        return 'Search your universe of files...';
+    }
   };
 
   return (
     <div style={styles.header}>
       <button onClick={toggleSidebar} style={styles.iconButton}>☰</button>
       <h1 style={styles.headerTitle}>Google Drive Analyzer</h1>
+
       <input
         type="text"
-        placeholder="Search your universe of files..."
+        placeholder={getPlaceholder()}
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
         style={styles.searchInput}
@@ -45,7 +56,9 @@ const Header = ({ styles, searchQuery, setSearchQuery, toggleSidebar }) => {
 
       <div style={styles.headerIcons}>
         {userInfo.name && (
-          <span style={{ color: 'white', fontWeight: 500 }}>{userInfo.name}</span>
+          <span style={{ color: 'white', fontWeight: 500, marginRight: '10px' }}>
+            {userInfo.name}
+          </span>
         )}
         {userInfo.picture && (
           <img
@@ -56,7 +69,8 @@ const Header = ({ styles, searchQuery, setSearchQuery, toggleSidebar }) => {
               width: '32px',
               height: '32px',
               borderRadius: '50%',
-              objectFit: 'cover'
+              objectFit: 'cover',
+              marginRight: '10px'
             }}
           />
         )}

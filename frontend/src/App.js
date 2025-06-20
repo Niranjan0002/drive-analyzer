@@ -23,18 +23,28 @@ function App() {
       });
   }, []);
 
-  if (isAuthenticated === null) return null;
+  if (isAuthenticated === null) return null; // Optionally, add a loading spinner
 
   return (
     <Router>
       <Routes>
-        <Route path="/" element={
-          isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />
-        } />
+        <Route
+          path="/"
+          element={
+            isAuthenticated
+              ? <Navigate to="/dashboard" replace />
+              : <Navigate to="/login" replace />
+          }
+        />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/dashboard" element={
-          isAuthenticated ? <GoogleDriveAnalyzer user={user} /> : <Navigate to="/login" replace />
-        } />
+        <Route
+          path="/dashboard"
+          element={
+            isAuthenticated
+              ? <GoogleDriveAnalyzer user={user} />
+              : <Navigate to="/login" replace />
+          }
+        />
       </Routes>
     </Router>
   );

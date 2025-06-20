@@ -1,39 +1,54 @@
-// components/GoogleDriveAnalyzer.jsx
 import React, { useEffect, useState } from 'react';
 import Header from './Header/Header';
 import Sidebar from './Sidebar/Sidebar';
 import StatsCards from './StatsCards/StatsCards';
 import RecentFiles from './RecentFiles/RecentFiles';
 import RightPanel from './RightPanel/RightPanel';
+import MyFiles from './MyFiles/MyFiles';
+import SharedFiles from './SharedFiles/SharedFiles';
+import FavoriteFiles from './FavoriteFiles/FavoriteFiles';
 import { getResponsiveStyles } from './styles';
 
 const GoogleDriveAnalyzer = ({ user }) => {
   const [activeNavItem, setActiveNavItem] = useState('Dashboard');
   const [searchQuery, setSearchQuery] = useState('');
   const [uploadStatus, setUploadStatus] = useState('');
-  const [realFiles, setRealFiles] = useState([]);
-  const [realStorage, setRealStorage] = useState(null);
+
+  const [recentFiles, setRecentFiles] = useState([]);
+  const [allFiles, setAllFiles] = useState([]);
+  const [sharedFiles, setSharedFiles] = useState([]);
+  const [favoriteFiles, setFavoriteFiles] = useState([]);
+
+  const [storage, setStorage] = useState(null);
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
 
   const styles = getResponsiveStyles();
 
-  const toggleSidebar = () => {
-    setIsSidebarVisible(!isSidebarVisible);
-  };
+  const toggleSidebar = () => setIsSidebarVisible(!isSidebarVisible);
 
   useEffect(() => {
     fetch('http://localhost:5000/files', { credentials: 'include' })
       .then(res => res.json())
-      .then(data => setRealFiles(data));
+      .then(data => setRecentFiles(data.slice(0, 12)));
+
+    fetch('http://localhost:5000/all-files', { credentials: 'include' })
+      .then(res => res.json())
+      .then(data => setAllFiles(data));
+
+    fetch('http://localhost:5000/shared', { credentials: 'include' })
+      .then(res => res.json())
+      .then(data => setSharedFiles(data));
+
+    fetch('http://localhost:5000/favorites', { credentials: 'include' })
+      .then(res => res.json())
+      .then(data => setFavoriteFiles(data));
 
     fetch('http://localhost:5000/storage', { credentials: 'include' })
       .then(res => res.json())
-      .then(data => setRealStorage(data));
+      .then(data => setStorage(data));
   }, []);
 
-  const handleNavClick = (itemName) => {
-    setActiveNavItem(itemName);
-  };
+  const handleNavClick = (itemName) => setActiveNavItem(itemName);
 
   const handleFileUpload = (e) => {
     e.preventDefault();
@@ -42,6 +57,7 @@ const GoogleDriveAnalyzer = ({ user }) => {
   };
 
   const handleDragOver = (e) => e.preventDefault();
+
   const handleDrop = (e) => {
     e.preventDefault();
     handleFileUpload(e);
@@ -60,6 +76,10 @@ const GoogleDriveAnalyzer = ({ user }) => {
     ];
   };
 
+  const filteredRecentFiles = recentFiles.filter(file =>
+    file.name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div style={styles.container}>
       <div style={styles.mainWrapper}>
@@ -69,6 +89,7 @@ const GoogleDriveAnalyzer = ({ user }) => {
           setSearchQuery={setSearchQuery}
           toggleSidebar={toggleSidebar}
           user={user}
+          activeNavItem={activeNavItem}
         />
 
         <div style={styles.mainContent}>
@@ -81,13 +102,49 @@ const GoogleDriveAnalyzer = ({ user }) => {
           )}
 
           <div style={styles.contentArea}>
-            <StatsCards styles={styles} />
-            <RecentFiles recentFiles={realFiles} styles={styles} />
+            {activeNavItem === 'Dashboard' && (
+              <>
+                <StatsCards styles={styles} />
+                <RecentFiles
+                  recentFiles={filteredRecentFiles}
+                  styles={styles}
+                  setFiles={setRecentFiles}
+                  searchQuery={searchQuery}
+                />
+              </>
+            )}
+
+            {activeNavItem === 'My Files' && (
+              <MyFiles
+                files={allFiles}
+                styles={styles}
+                setFiles={setAllFiles}
+                searchQuery={searchQuery}
+              />
+            )}
+
+            {activeNavItem === 'Shared' && (
+              <SharedFiles
+                files={sharedFiles}
+                styles={styles}
+                setFiles={setSharedFiles}
+                searchQuery={searchQuery}
+              />
+            )}
+
+            {activeNavItem === 'Favorites' && (
+              <FavoriteFiles
+                files={favoriteFiles}
+                styles={styles}
+                setFiles={setFavoriteFiles}
+                searchQuery={searchQuery}
+              />
+            )}
           </div>
 
           <RightPanel
             styles={styles}
-            storageData={realStorage ? formatStorageData(realStorage) : []}
+            storageData={storage ? formatStorageData(storage) : []}
             handleDrop={handleDrop}
             handleDragOver={handleDragOver}
             handleFileUpload={handleFileUpload}

@@ -1,8 +1,8 @@
 // styles/styles.js
-export const getResponsiveStyles = () => {
-  const isMobile = window.innerWidth <= 768;
-  const isTablet = window.innerWidth > 768 && window.innerWidth <= 1024;
-  const isDesktop = window.innerWidth > 1024;
+export const getResponsiveStyles = (width = window.innerWidth) => {
+  const isMobile = width <= 768;
+  const isTablet = width > 768 && width <= 1024;
+  const isDesktop = width > 1024;
 
   return {
     container: {
@@ -43,7 +43,14 @@ export const getResponsiveStyles = () => {
       minHeight: '36px',
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'center'
+      justifyContent: 'center',
+      transition: 'background-color 0.2s ease',
+      '&:hover': {
+        backgroundColor: 'rgba(255,255,255,0.1)'
+      },
+      '&:active': {
+        backgroundColor: 'rgba(255,255,255,0.2)'
+      }
     },
     headerTitle: {
       fontSize: isMobile ? '1.2rem' : '1.5rem',
@@ -60,8 +67,13 @@ export const getResponsiveStyles = () => {
       marginLeft: isMobile ? '8px' : '20px',
       fontSize: isMobile ? '14px' : '16px',
       minWidth: isMobile ? '120px' : '200px',
-      '::placeholder': {
+      transition: 'background-color 0.2s ease',
+      '&::placeholder': {
         color: 'rgba(255,255,255,0.7)'
+      },
+      '&:focus': {
+        outline: 'none',
+        backgroundColor: 'rgba(255,255,255,0.3)'
       }
     },
     headerIcons: {
@@ -73,7 +85,12 @@ export const getResponsiveStyles = () => {
       background: '#fff',
       borderRadius: '50%',
       width: isMobile ? '28px' : '32px',
-      height: isMobile ? '28px' : '32px'
+      height: isMobile ? '28px' : '32px',
+      cursor: 'pointer',
+      transition: 'transform 0.2s ease',
+      '&:hover': {
+        transform: 'scale(1.05)'
+      }
     },
     mainContent: {
       display: 'flex',
@@ -106,7 +123,12 @@ export const getResponsiveStyles = () => {
       cursor: 'pointer',
       color: '#d1d5db',
       marginBottom: isMobile ? '4px' : '8px',
-      minHeight: '40px'
+      minHeight: '40px',
+      transition: 'all 0.2s ease',
+      '&:hover': {
+        backgroundColor: '#374151',
+        color: '#fff'
+      }
     },
     navItemActive: {
       background: '#374151',
@@ -139,7 +161,13 @@ export const getResponsiveStyles = () => {
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'space-between',
-      minHeight: isMobile ? '80px' : '100px'
+      minHeight: isMobile ? '80px' : '100px',
+      transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+      cursor: 'pointer',
+      '&:hover': {
+        transform: 'translateY(-2px)',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+      }
     },
     statCardDecoration: {
       height: '4px',
@@ -156,7 +184,8 @@ export const getResponsiveStyles = () => {
       lineHeight: '1.2'
     },
     statLabel: {
-      fontSize: isMobile ? '0.8rem' : '0.9rem'
+      fontSize: isMobile ? '0.8rem' : '0.9rem',
+      opacity: 0.9
     },
     recentSection: {
       marginTop: isMobile ? '24px' : '32px'
@@ -170,7 +199,13 @@ export const getResponsiveStyles = () => {
       padding: isMobile ? '14px' : '16px',
       borderRadius: isMobile ? '10px' : '12px',
       color: 'white',
-      minHeight: isMobile ? '80px' : '100px'
+      minHeight: isMobile ? '80px' : '100px',
+      cursor: 'pointer',
+      transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+      '&:hover': {
+        transform: 'translateY(-2px)',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+      }
     },
     recentFileText: {
       textAlign: 'left'
@@ -182,11 +217,13 @@ export const getResponsiveStyles = () => {
       marginBottom: '4px'
     },
     fileMeta: {
-      fontSize: isMobile ? '0.8rem' : '0.85rem'
+      fontSize: isMobile ? '0.8rem' : '0.85rem',
+      opacity: 0.8
     },
     fileTime: {
       fontSize: isMobile ? '0.75rem' : '0.8rem',
-      opacity: 0.8
+      opacity: 0.7,
+      marginTop: '4px'
     },
     rightPanel: {
       background: '#1f2937',
@@ -297,7 +334,15 @@ export const getResponsiveStyles = () => {
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      justifyContent: 'center'
+      justifyContent: 'center',
+      '&:hover': {
+        borderColor: '#6b7280',
+        backgroundColor: 'rgba(75, 85, 99, 0.2)',
+        color: '#d1d5db'
+      },
+      '&:active': {
+        transform: 'scale(0.98)'
+      }
     },
     uploadIcon: {
       fontSize: isMobile ? '2rem' : '2.5rem',
@@ -324,7 +369,16 @@ export const getResponsiveStyles = () => {
       padding: '8px 16px',
       border: 'none',
       borderRadius: '8px',
-      cursor: 'pointer'
+      cursor: 'pointer',
+      transition: 'all 0.2s ease',
+      fontWeight: '500',
+      '&:hover': {
+        backgroundColor: '#dc2626',
+        transform: 'translateY(-1px)'
+      },
+      '&:active': {
+        transform: 'translateY(0)'
+      }
     },
     confirmOverlay: {
       position: 'fixed',
@@ -336,7 +390,8 @@ export const getResponsiveStyles = () => {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      zIndex: 999
+      zIndex: 999,
+      backdropFilter: 'blur(4px)'
     },
     confirmBox: {
       backgroundColor: '#1f2937',
@@ -345,24 +400,78 @@ export const getResponsiveStyles = () => {
       borderRadius: '12px',
       textAlign: 'center',
       minWidth: '300px',
-      boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
+      maxWidth: isMobile ? '90vw' : '400px',
+      boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+      border: '1px solid #374151'
     },
     confirmButton: {
       backgroundColor: '#ef4444',
       color: 'white',
       border: 'none',
-      padding: '8px 16px',
+      padding: '10px 20px',
       borderRadius: '6px',
-      marginRight: '10px',
-      cursor: 'pointer'
+      marginRight: '12px',
+      cursor: 'pointer',
+      fontWeight: '500',
+      transition: 'background-color 0.2s ease',
+      '&:hover': {
+        backgroundColor: '#dc2626'
+      }
     },
     cancelButton: {
       backgroundColor: '#4b5563',
       color: 'white',
       border: 'none',
-      padding: '8px 16px',
+      padding: '10px 20px',
       borderRadius: '6px',
-      cursor: 'pointer'
+      cursor: 'pointer',
+      fontWeight: '500',
+      transition: 'background-color 0.2s ease',
+      '&:hover': {
+        backgroundColor: '#6b7280'
+      }
+    },
+    fileList: {
+      listStyle: 'none',
+      padding: 0,
+      marginTop: '12px'
+    },
+    fileItem: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      backgroundColor: '#374151',
+      padding: '12px 16px',
+      borderRadius: '8px',
+      marginBottom: '8px',
+      color: '#fff',
+      transition: 'background-color 0.2s ease',
+      '&:hover': {
+        backgroundColor: '#4b5563'
+      }
+    },
+    fileItemInfo: {
+      display: 'flex',
+      flexDirection: 'column',
+      flex: 1,
+      minWidth: 0
+    },
+    fileItemName: {
+      fontSize: isMobile ? '0.9rem' : '1rem',
+      fontWeight: '500',
+      marginBottom: '2px',
+      wordBreak: 'break-word'
+    },
+    fileItemMeta: {
+      fontSize: isMobile ? '0.75rem' : '0.8rem',
+      color: '#9ca3af'
+    },
+    fileSize: {
+      fontSize: isMobile ? '0.8rem' : '0.85rem',
+      color: '#d1d5db',
+      fontWeight: '500',
+      marginLeft: '12px',
+      flexShrink: 0
     }
   };
 };

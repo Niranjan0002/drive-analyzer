@@ -68,11 +68,111 @@ def list_files():
     drive_service = build('drive', 'v3', credentials=creds)
 
     results = drive_service.files().list(
-        pageSize=10,
+        pageSize=100,  # 🔁 Increase to fetch more files
+        fields="files(id, name, mimeType, modifiedTime, size, parents)"  # ✅ Added `parents`
+    ).execute()
+
+    return jsonify(results.get('files', []))
+
+@app.route("/shared")
+def get_shared_files():
+    if 'credentials' not in session:
+        return redirect("/login")
+
+    creds = Credentials(**session['credentials'])
+    drive_service = build('drive', 'v3', credentials=creds)
+
+    try:
+        results = drive_service.files().list(
+            q="sharedWithMe = true",
+            fields="files(id, name, mimeType, modifiedTime, size, parents)"
+        ).execute()
+
+        return jsonify(results.get('files', []))
+    except Exception as e:
+        print("❌ Error fetching shared files:", e)
+        return jsonify([])
+
+@app.route("/favorites")
+def get_starred_files():
+    if 'credentials' not in session:
+        return redirect("/login")
+
+    creds = Credentials(**session['credentials'])
+    drive_service = build('drive', 'v3', credentials=creds)
+
+    results = drive_service.files().list(
+        q="starred = true and trashed = false",
+        fields="files(id, name, mimeType, modifiedTime, size, parents, starred)"
+    ).execute()
+
+    return jsonify(results.get('files', []))
+
+@app.route("/star/<file_id>", methods=['POST'])
+def toggle_star(file_id):
+    if 'credentials' not in session:
+        return jsonify({ "status": "unauthorized" }), 401
+
+    creds = Credentials(**session['credentials'])
+    drive_service = build('drive', 'v3', credentials=creds)
+
+    starred_status = request.json.get("starred", False)
+
+    try:
+        drive_service.files().update(
+            fileId=file_id,
+            body={ "starred": starred_status }
+        ).execute()
+        return jsonify({ "status": "success", "starred": starred_status })
+    except Exception as e:
+        print("❌ Error toggling star:", e)
+        return jsonify({ "status": "error", "message": str(e) }), 500
+
+@app.route("/all-files")
+def list_all_files():
+    if 'credentials' not in session:
+        return redirect("/login")
+
+    creds = Credentials(**session['credentials'])
+    drive_service = build('drive', 'v3', credentials=creds)
+
+    all_files = []
+    page_token = None
+
+    while True:
+        response = drive_service.files().list(
+            q="trashed = false",
+            fields="nextPageToken, files(id, name, mimeType, modifiedTime, size, parents)",
+            pageToken=page_token
+        ).execute()
+
+        all_files.extend(response.get('files', []))
+        page_token = response.get('nextPageToken')
+        if not page_token:
+            break
+
+    return jsonify(all_files)
+
+@app.route("/reset")
+def reset_session():
+    session.clear()
+    return "🔁 Session cleared. Now go to /login again."
+
+@app.route("/folder/<folder_id>")
+def get_files_in_folder(folder_id):
+    if 'credentials' not in session:
+        return redirect("/login")
+
+    creds = Credentials(**session['credentials'])
+    drive_service = build('drive', 'v3', credentials=creds)
+
+    results = drive_service.files().list(
+        q=f"'{folder_id}' in parents and trashed=false",
         fields="files(id, name, mimeType, modifiedTime, size)"
     ).execute()
 
     return jsonify(results.get('files', []))
+
 
 @app.route("/storage")
 def storage_info():
@@ -133,6 +233,22 @@ def get_user():
     except Exception as e:
         print("❌ Error accessing Google API:", e)
         return 'Unauthorized', 401
+    
+@app.route("/delete/<file_id>", methods=["DELETE"])
+def delete_file(file_id):
+    if 'credentials' not in session:
+        return 'Unauthorized', 401
+
+    creds = Credentials(**session['credentials'])
+    drive_service = build('drive', 'v3', credentials=creds)
+
+    try:
+        drive_service.files().delete(fileId=file_id).execute()
+        return jsonify({"status": "success"})
+    except Exception as e:
+        print("❌ Error deleting file:", e)
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 
 @app.route("/logout")
 def logout():
