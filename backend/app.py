@@ -3,6 +3,9 @@ import os
 import json
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
+from googleapiclient.http import MediaIoBaseUpload
+import io
+
 from flask import Flask, redirect, request, session, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -248,6 +251,42 @@ def delete_file(file_id):
     except Exception as e:
         print("❌ Error deleting file:", e)
         return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    if 'credentials' not in session:
+        return jsonify({'error': 'User not authenticated'}), 401
+
+    creds = Credentials(**session['credentials'])
+    drive_service = build('drive', 'v3', credentials=creds)
+
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part in request'}), 400
+
+    uploaded_file = request.files['file']
+    if uploaded_file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+
+    try:
+        media = MediaIoBaseUpload(io.BytesIO(uploaded_file.read()), mimetype=uploaded_file.mimetype)
+        
+        # ✅ Ensure it gets placed into the root directory
+        file_metadata = {
+            'name': uploaded_file.filename,
+            'parents': ['root']
+        }
+
+        created_file = drive_service.files().create(
+            body=file_metadata,
+            media_body=media,
+            fields='id'
+        ).execute()
+
+        return jsonify({'status': 'success', 'fileId': created_file.get('id')}), 200
+
+    except Exception as e:
+        print(f"Upload error: {e}")
+        return jsonify({'error': 'Failed to upload file'}), 500
 
 
 @app.route("/logout")

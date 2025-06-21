@@ -50,10 +50,38 @@ const GoogleDriveAnalyzer = ({ user }) => {
 
   const handleNavClick = (itemName) => setActiveNavItem(itemName);
 
-  const handleFileUpload = (e) => {
-    e.preventDefault();
-    setUploadStatus('✓ Files uploaded successfully!');
-    setTimeout(() => setUploadStatus(''), 2000);
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("http://localhost:5000/upload", {
+        method: "POST",
+        body: formData,
+        credentials: "include"
+      });
+
+      const data = await res.json();
+
+      if (data.status === "success") {
+        setUploadStatus(`✅ File uploaded: ${file.name} (ID: ${data.fileId})`);
+        
+        // optional: refresh files
+        const updated = await fetch("http://localhost:5000/all-files", { credentials: "include" });
+        const newFiles = await updated.json();
+        setAllFiles(newFiles);
+      } else {
+        setUploadStatus("❌ Upload failed: " + data.error);
+      }
+    } catch (err) {
+      console.error("Upload error:", err);
+      setUploadStatus("❌ Upload failed: Internal error");
+    }
+
+    setTimeout(() => setUploadStatus(""), 4000);
   };
 
   const handleDragOver = (e) => e.preventDefault();
